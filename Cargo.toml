@@ -6,8 +6,10 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-smallvec = "*"
+smallvec = "1.13.1"
 
 [features]
 default = []
 std = []
+# 内存排布对slab分配器更友好，内存用量更低
+slab-friendly = []
