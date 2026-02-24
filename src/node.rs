@@ -1,4 +1,6 @@
 use core::cmp::Ordering;
+#[cfg(feature = "slab-friendly")]
+use core::convert::TryInto;
 use core::ops::{Deref, DerefMut};
 
 use crate::entry::{ItemEntry, XEntry};
@@ -115,6 +117,16 @@ where
 }
 
 impl<I: ItemEntry> XNode<I> {
+    #[cfg(feature = "slab-friendly")]
+    fn empty_slots() -> alloc::boxed::Box<[XEntry<I>; SLOT_SIZE]> {
+        let mut slots = alloc::vec::Vec::with_capacity(SLOT_SIZE);
+        slots.resize_with(SLOT_SIZE, || XEntry::EMPTY);
+        match slots.into_boxed_slice().try_into() {
+            Ok(slots) => slots,
+            Err(_) => panic!("xarray: invalid slab-friendly slot length"),
+        }
+    }
+
     pub fn new_root(height: Height) -> Self {
         Self::new(height, 0)
     }
@@ -126,7 +138,7 @@ impl<I: ItemEntry> XNode<I> {
             #[cfg(not(feature = "slab-friendly"))]
             slots: [XEntry::EMPTY; SLOT_SIZE],
             #[cfg(feature = "slab-friendly")]
-            slots: alloc::boxed::Box::new([XEntry::EMPTY; SLOT_SIZE]),
+            slots: Self::empty_slots(),
             marks: [Mark::EMPTY; NUM_MARKS],
         }
     }
